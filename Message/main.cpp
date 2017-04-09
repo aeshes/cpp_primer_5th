@@ -13,10 +13,18 @@ public:
 	message(const message &msg);
 	message& operator=(const message &msg);
 	~message();
+	message(message&&);
+	message& operator=(message&&);
 
 	void save(folder &f);
 	void remove(folder &f);
 	void show();
+
+	void add_folder(folder *f);
+	void rem_folder(folder *f);
+	void move_folders(message *m);
+
+	friend void swap(message &lhs, message &rhs);
 
 private:
 	std::string contents;
@@ -92,6 +100,63 @@ message& message::operator=(const message &rhs)
 message::~message()
 {
 	remove_from_folders();
+}
+
+message::message(message&& m) : contents(std::move(m.contents))
+{
+	move_folders(&m);
+}
+
+message& message::operator=(message&& rhs)
+{
+	if (this != &rhs)
+	{
+		remove_from_folders();
+		contents = std::move(rhs.contents);
+		move_folders(&rhs);
+	}
+	return *this;
+}
+
+void message::add_folder(folder *f)
+{
+	folders.insert(f);
+}
+
+void message::rem_folder(folder *f)
+{
+	folders.erase(f);
+}
+
+void message::move_folders(message *m)
+{
+	folders = std::move(m->folders);
+
+	for (auto f : folders)
+	{
+		f->rem_msg(m);
+		f->add_msg(this);
+	}
+
+	m->folders.clear();
+}
+
+void swap(message &lhs, message &rhs)
+{
+	using std::swap;
+
+	for (auto f : lhs.folders)
+		f->rem_msg(&lhs);
+	for (auto f : rhs.folders)
+		f->rem_msg(&rhs);
+
+	swap(lhs.folders, rhs.folders);
+	swap(lhs.contents, rhs.contents);
+
+	for (auto f : lhs.folders)
+		f->add_msg(&lhs);
+	for (auto f : rhs.folders)
+		f->add_msg(&rhs);
 }
 
 void folder::add_msg(message *msg)
