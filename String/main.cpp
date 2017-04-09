@@ -63,6 +63,8 @@ String& String::operator=(String&& rhs)
 {
 	if (this != &rhs)
 	{
+		free();
+		
 		buffer = rhs.buffer;
 		length = rhs.length;
 
