@@ -4,6 +4,7 @@
 #include <utility>
 #include <initializer_list>
 #include <algorithm>
+#include <vector>
 
 class StrVec
 {
@@ -11,7 +12,9 @@ public:
 	StrVec() : elements(nullptr), first_free(nullptr), cap(nullptr) {}
 	StrVec(const StrVec &);
 	StrVec(std::initializer_list<std::string> il);
+	StrVec(StrVec&&) noexcept;
 	StrVec& operator=(const StrVec &);
+	StrVec& operator=(StrVec&&) noexcept;
 	~StrVec();
 
 	void push_back(const std::string &);
@@ -73,6 +76,12 @@ StrVec::StrVec(std::initializer_list<std::string> il)
 	first_free = cap = newdata.second;
 }
 
+StrVec::StrVec(StrVec&& s) noexcept
+	: elements(s.elements), first_free(s.first_free), cap(s.cap)
+{
+	s.elements = s.first_free = s.cap = nullptr;
+}
+
 StrVec::~StrVec()
 {
 	free();
@@ -87,19 +96,32 @@ StrVec& StrVec::operator=(const StrVec &rhs)
 	return *this;
 }
 
+StrVec& StrVec::operator=(StrVec&& rhs) noexcept
+{
+	if (this != &rhs)
+	{
+		free();
+		elements = rhs.elements;
+		first_free = rhs.first_free;
+		cap = rhs.cap;
+
+		rhs.elements = rhs.first_free = rhs.cap = nullptr;
+	}
+	return *this;
+}
+
 void StrVec::reallocate()
 {
 	auto newcapacity = size() ? 2 * size() : 1;
-	auto newdata = alloc.allocate(newcapacity);
-	auto dest = newdata;
-	auto elem = elements;
+	auto first = alloc.allocate(newcapacity);
+	auto last = std::uninitialized_copy(std::make_move_iterator(begin()),
+		std::make_move_iterator(end()),
+		first);
 
-	for (size_t i = 0; i != size(); ++i)
-		alloc.construct(dest++, std::move(*elem++));
 	free();
 
-	elements = newdata;
-	first_free = dest;
+	elements = first;
+	first_free = last;
 	cap = elements + newcapacity;
 }
 
