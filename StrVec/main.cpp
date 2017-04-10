@@ -18,6 +18,7 @@ public:
 	~StrVec();
 
 	void push_back(const std::string &);
+	void push_back(std::string&&);
 	std::size_t size() const { return first_free - elements; }
 	std::size_t capacity() const { return cap - elements; }
 	std::string *begin() const { return elements; }
@@ -42,6 +43,12 @@ void StrVec::push_back(const std::string &s)
 {
 	check_and_alloc();
 	alloc.construct(first_free++, s);
+}
+
+void StrVec::push_back(std::string&& s)
+{
+	check_and_alloc();
+	alloc.construct(first_free++, std::move(s));
 }
 
 std::pair<std::string *, std::string *>
