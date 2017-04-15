@@ -15,6 +15,9 @@ public:
 	StrVec(StrVec&&) noexcept;
 	StrVec& operator=(const StrVec &);
 	StrVec& operator=(StrVec&&) noexcept;
+	StrVec& operator=(std::initializer_list<std::string> il);
+	std::string& operator[](std::size_t n) { return elements[n]; }
+	const std::string& operator[](std::size_t n) const { return elements[n]; }
 	~StrVec();
 
 	void push_back(const std::string &);
@@ -132,10 +135,21 @@ void StrVec::reallocate()
 	cap = elements + newcapacity;
 }
 
+StrVec& StrVec::operator=(std::initializer_list<std::string> il)
+{
+	auto data = alloc_and_copy(il.begin(), il.end());
+	free();
+
+	elements = data.first;
+	first_free = cap = data.second;
+
+	return *this;
+}
+
 
 int main()
 {
-	StrVec v{ "aaa", "bbb", "ccc" };
+	StrVec v = { "aaa", "bbb", "ccc" };
 
 	for (auto str : v) std::cout << str << std::endl;
 }
