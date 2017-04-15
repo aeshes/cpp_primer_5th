@@ -12,6 +12,10 @@ public:
 	String& operator=(const String&);
 	String& operator=(String&&);
 	size_t size() { return length; }
+	friend std::ostream& operator<<(std::ostream&, const String&);
+	friend bool operator==(const String& lhs, const String& rhs);
+	friend bool operator!=(const String& lhs, const String& rhs);
+	friend bool operator<(const String& lhs, const String& rhs);
 
 private:
 	char *buffer;
@@ -64,7 +68,7 @@ String& String::operator=(String&& rhs)
 	if (this != &rhs)
 	{
 		free();
-		
+
 		buffer = rhs.buffer;
 		length = rhs.length;
 
@@ -93,10 +97,37 @@ void String::alloc_and_copy(const char *pStr)
 	buffer = data;
 }
 
+std::ostream& operator<<(std::ostream& os, const String& str)
+{
+	os << str.buffer;
+	return os;
+}
+
+bool operator==(const String& lhs, const String& rhs)
+{
+	return std::strcmp(lhs.buffer, rhs.buffer) == 0;
+}
+
+bool operator!=(const String& lhs, const String& rhs)
+{
+	return !(lhs == rhs);
+}
+
+bool operator<(const String& lhs, const String& rhs)
+{
+	return std::strcmp(lhs.buffer, rhs.buffer) < 0;
+}
+
 int main()
 {
 	String a("xxx");
 	String b(a);
+	String c("yyy");
 	//b = std::move(a);
 	b = a;
+
+	std::cout << b << std::endl;
+	std::cout << (a == b) << std::endl;
+	std::cout << (a == c) << std::endl;
+	std::cout << (a < c) << " " << (c < a) << std::endl;
 }
