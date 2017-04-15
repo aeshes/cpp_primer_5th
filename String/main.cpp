@@ -16,6 +16,8 @@ public:
 	friend bool operator==(const String& lhs, const String& rhs);
 	friend bool operator!=(const String& lhs, const String& rhs);
 	friend bool operator<(const String& lhs, const String& rhs);
+	char operator[](std::size_t n) { return buffer[n]; }
+	const char operator[](std::size_t n) const { return buffer[n]; }
 
 private:
 	char *buffer;
@@ -130,4 +132,6 @@ int main()
 	std::cout << (a == b) << std::endl;
 	std::cout << (a == c) << std::endl;
 	std::cout << (a < c) << " " << (c < a) << std::endl;
+
+	std::cout << c[1] << std::endl;
 }
