@@ -2,15 +2,26 @@
 #include <vector>
 #include <initializer_list>
 #include <memory>
+#include <string>
+
+template <typename T> class BlobPtr;
+template <typename T> class Blob;
+template <typename T> bool operator==(const Blob<T>&, const Blob<T>&);
 
 template <typename T> class Blob
 {
+	friend class BlobPtr<T>;
+	friend bool operator==<T>(const Blob<T>&, const Blob<T>&);
 public:
 	typedef T value_type;
 	typedef typename std::vector<T>::size_type size_type;
 
 	Blob() : data(std::make_shared<std::vector<T>>()) {}
-	Blob(std::initializer_list<T> il) : data(std::make_shared<std::vector<T>>(il)) {}
+	Blob(std::initializer_list<T> il) :
+		data(std::make_shared<std::vector<T>>(il)) {}
+	
+	BlobPtr<T> begin() { return BlobPtr<T>(*this); }
+	BlobPtr<T> end() { return BlobPtr<T>(*this, data->size()); }
 	size_type size() const { return data->size(); }
 	bool empty() const { return data->empty(); }
 	void push_back(const T& t) { data->push_back(t); }
@@ -69,14 +80,31 @@ void Blob<T>::pop_back()
 	data->pop_back();
 }
 
+template <typename T>
+T& Blob<T>::operator[](size_type i)
+{
+	check(i, "Subscript out of range");
+	return (*data)[i];
+}
+
+
 template <typename T> class BlobPtr
 {
 public:
 	BlobPtr() : curr(0) {}
-	BlobPtr(Blob& b, std::size_t sz = 0)
+	BlobPtr(Blob<T>& b, std::size_t sz = 0)
 		: wptr(b.data), curr(sz) {}
-	std::string& deref() const;
-	BlobPtr& incr();
+	T& operator*() const
+	{
+		auto p = check(curr, std::string("Dereference past end"));
+		return (*p)[curr];
+	}
+	BlobPtr& operator++();
+	BlobPtr& operator--();
+	BlobPtr& operator++(int);
+	BlobPtr& operator--(int);
+	
+	bool operator!=(const BlobPtr& right) { return curr != right.curr; }
 
 private:
 	std::shared_ptr<std::vector<T>> check(std::size_t, std::string&) const;
@@ -95,7 +123,43 @@ std::shared_ptr<std::vector<T>> BlobPtr<T>::check(std::size_t i, std::string& ms
 	return ret;
 }
 
+template <typename T>
+BlobPtr<T>& BlobPtr<T>::operator++()
+{
+	check(curr, std::string("Increment past end"));
+	++curr;
+	return *this;
+}
+
+template <typename T>
+BlobPtr<T>& BlobPtr<T>::operator--()
+{
+	check(curr, "Decrement before begin");
+	--curr;
+	return *this;
+}
+
+template <typename T>
+BlobPtr<T>& BlobPtr<T>::operator++(int)
+{
+	BlobPtr ret = *this;
+	++*this;
+	return ret;
+}
+
+template <typename T>
+BlobPtr<T>& BlobPtr<T>::operator--(int)
+{
+	BlobPtr ret = *this;
+	--*this;
+	return ret;
+}
+
 int main()
 {
+	Blob<std::string> blob = { "aaa", "bbb", "ccc" };
+	BlobPtr<std::string> ptr(blob);
 
+	for (auto it = blob.begin(); it != blob.end(); ++it)
+		std::cout << *it << std::endl;
 }
