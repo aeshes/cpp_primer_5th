@@ -19,6 +19,7 @@ public:
 	Blob() : data(std::make_shared<std::vector<T>>()) {}
 	Blob(std::initializer_list<T> il) :
 		data(std::make_shared<std::vector<T>>(il)) {}
+	template <typename It> Blob(It b, It e);
 	
 	BlobPtr<T> begin() { return BlobPtr<T>(*this); }
 	BlobPtr<T> end() { return BlobPtr<T>(*this, data->size()); }
@@ -37,6 +38,11 @@ private:
 	std::shared_ptr<std::vector<T>> data;
 	void check(size_type i, const std::string& msg) const;
 };
+
+template<typename T>
+template<typename It>
+Blob<T>::Blob(It b, It e)
+	: data(std::make_shared<std::vector<T>>(b, e)) {}
 
 template <typename T>
 void Blob<T>::check(size_type i, const std::string& msg) const
@@ -96,7 +102,7 @@ public:
 		: wptr(b.data), curr(sz) {}
 	T& operator*() const
 	{
-		auto p = check(curr, std::string("Dereference past end"));
+		auto p = check(curr, "Dereference past end");
 		return (*p)[curr];
 	}
 	BlobPtr& operator++();
@@ -104,16 +110,17 @@ public:
 	BlobPtr& operator++(int);
 	BlobPtr& operator--(int);
 	
+	bool operator==(const BlobPtr& right) { return curr == right.curr; }
 	bool operator!=(const BlobPtr& right) { return curr != right.curr; }
 
 private:
-	std::shared_ptr<std::vector<T>> check(std::size_t, std::string&) const;
+	std::shared_ptr<std::vector<T>> check(std::size_t, const std::string&) const;
 	std::weak_ptr<std::vector<T>> wptr;
 	std::size_t curr;
 };
 
 template <typename T>
-std::shared_ptr<std::vector<T>> BlobPtr<T>::check(std::size_t i, std::string& msg) const
+std::shared_ptr<std::vector<T>> BlobPtr<T>::check(std::size_t i, const std::string& msg) const
 {
 	auto ret = wptr.lock();
 	if (!ret)
@@ -126,7 +133,7 @@ std::shared_ptr<std::vector<T>> BlobPtr<T>::check(std::size_t i, std::string& ms
 template <typename T>
 BlobPtr<T>& BlobPtr<T>::operator++()
 {
-	check(curr, std::string("Increment past end"));
+	check(curr, "Increment past end");
 	++curr;
 	return *this;
 }
